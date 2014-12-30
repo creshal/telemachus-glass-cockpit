@@ -39,7 +39,7 @@ the JS code takes care of the rest. Documentation in the file.
 
 <img src='http://i.imgur.com/o5FOWdd.png'/>
 
-A navball (may also work as muffin). Uses a texture made by
+`navball.html` is a navball (may also work as muffin). Uses a texture made by
 [WhiteOwl](http://forum.kerbalspaceprogram.com/threads/69540-Making-high-contrast-nav-ball!?p=1096713&viewfull=1#post1096713),
 as I'm probably not able to redistribute KSP's own. Also it looks decent.
 The texture (`navball.png`) can be replaced by any you can find in the linked
