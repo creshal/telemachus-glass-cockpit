@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<title>Readout</title>
+	<!-- Samuel Creshal <samuel@creshal.de> 2014
+	     No warranty yadda yadda you know the drill, Public Domain
+
+	     See navball.html for docs on JS/CSS imports. -->
+	<link rel="stylesheet" type="text/css" href="yskeleton.css" />
+	<link rel="stylesheet" type="text/css" href="ystyle.css" />
+
+	<script src='zepto.js'></script>
+	<script type="text/javascript" src="jKSPWAPICore.js"></script>
+</head>
+
+<body style="padding: 1rem;font-family:monospace;font-size:2rem">
+	<!-- Readout fields. See below for how they're set up and how to modify -->
+	<div class="row">
+		<div class="three columns">Periaps:</div>
+		<div class="three columns readout distance" id="o.PeA">&nbsp;</div>
+		<div class="three columns">Apoaps.:</div>
+		<div class="three columns readout distance" id="o.ApA">&nbsp;</div>
+	</div>
+	<div class="row">
+		<div class="three columns">Altitud:</div>
+		<div class="three columns readout distance" id="v.altitude">&nbsp;</div>
+		<div class="three columns">Inclin.:</div>
+		<div class="three columns readout deg" id="o.inclination">&nbsp;</div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="three columns">Vrt Spd:</div>
+		<div class="three columns readout velocity" id="v.verticalSpeed">&nbsp;</div>
+		<div class="three columns">Orb Vel:</div>
+		<div class="three columns readout velocity" id="v.orbitalVelocity">&nbsp;</div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="three columns">Longitd:</div>
+		<div class="three columns readout deg" id="v.long">&nbsp;</div>
+		<div class="three columns">Latitd.:</div>
+		<div class="three columns readout deg" id="v.lat">&nbsp;</div>
+	</div>
+	<div class="row">
+		<div class="three columns">AtmPres:</div>
+		<div class="three columns readout unitless" id="v.atmosphericDensity">&nbsp;</div>
+		<div class="three columns">G force:</div>
+		<div class="three columns readout unitless" id="v.geeForce">&nbsp;</div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="three columns">Throttl:</div>
+		<div class="three columns readout unitless" id="f.throttle">&nbsp;</div>
+	</div>
+
+<script>
+	var stop=false;
+	var qry = "";
+	setInterval (function () {
+		if (stop)
+			return;
+		/* Dynamically cobble together what data we want from the ID of the readout
+		   fields. These must directly correspond to the API string values here:
+		   https://github.com/richardbunt/Telemachus/wiki/API-String
+
+		   Additionally, jKSPWAPI's formatters are used to prettify the output, a
+		   class corresponding to one of the (undocumented, yay) formatters must be
+		   set on all readout fields (cf. jKSPWAPICore.js for available formatters).
+
+		   Within these restrictions, you're free to add or remove readout fields
+		   or other HTML contents.
+
+		   TODO: Cache as much as possible during start, because traversing the DOM
+		         on every update ain't cheap. Also possibly move the formatters to
+		         some data attribute to clean up its lookup code.
+		 */
+
+		qry="";
+		$(".readout").each (function (i, elem) {
+			qry += elem.id+"="+elem.id+"&";
+		});
+		jKSPWAPI.call (qry.slice(0,-1), function (v) {
+			$(".readout").each (function (i, elem) {
+				var rawdata = v[elem.id];
+				$.each (elem.classList, function (j,c) {
+					/* If you want to change the layout and use more/less columns, you'll
+					   need to modify this to add the style classes.
+					 */
+					if (c != "two" && c != "three" && c != "columns" && c != "readout") {
+						elem.innerHTML = jKSPWAPI.formatters[c](rawdata);
+					}
+				});
+			});
+		});
+	}, 330);
+
+</script>
+</body>
+</html>

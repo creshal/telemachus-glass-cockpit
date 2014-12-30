@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<title>Controls</title>
+	<!-- Samuel Creshal <samuel@creshal.de> 2014
+	     No warranty yadda yadda you know the drill, Public Domain
+
+	     See navball.html for docs on JS/CSS imports. -->
+	<link rel="stylesheet" type="text/css" href="yskeleton.css" />
+	<link rel="stylesheet" type="text/css" href="ystyle.css" />
+
+	<script src='zepto.js'></script>
+	<script type="text/javascript" src="jKSPWAPICore.js"></script>
+</head>
+
+<body>
+	<div class='row'>
+		<button class='four columns' id='sas'>SAS</button>
+		<button class='four columns' id='rcs'>RCS</button>
+		<button class='four columns' id='light'>LHT</button>
+	</div>
+	<div class='row'>
+		<button class='six columns' id='gear'>GEAR</button>
+		<button class='six columns' id='brake'>BRAKES</button>
+	</div>
+	<br/>
+	<div class='row'>
+		<button class='three columns' id='ag1'>LAS JETT</button>
+		<button class='three columns' id='ag2'>PHOT DEPL</button>
+		<button class='three columns' id='ag3'>BAY TGGL</button>
+		<button class='three columns' id='ag10'>CHUTES</button>
+	</div>
+	<br/>
+	<div class='row'>
+		<button class='three columns grad' id='mj.prograde'>PRO GR</button>
+		<button class='three columns grad' id='mj.retrograde'>RET GR</button>
+		<button class='three columns node' id='mj.node'>NODE</button>
+		<button class='three columns abort' id='mj.smartassoff'>NOPILOT</button>
+	</div>
+	<div class='row'>
+		<button class='two columns tgt' id='mj.targetplus'>TGT+</button>
+		<button class='two columns tgt' id='mj.targetminus'>TGT-</button>
+		<button class='two columns tgt' id='mj.relativeplus'>REL+</button>
+		<button class='two columns tgt' id='mj.relativeminus'>REL-</button>
+		<button class='two columns tgt' id='mj.parallelplus'>PAR+</button>
+		<button class='two columns tgt' id='mj.parallelminus'>PAR-</button>
+	</div>
+	<br/>
+	<div class='row'>
+		<button class='two columns' id='err'>ERR?</button>
+		<button class='five columns abort' id='stage'>STAGE</button>
+		<div class='one column'>&nbsp;</div>
+		<button class='four columns abort' id='abort'>ABORT</button>
+	</div>
+
+	<script>
+		/* Those buttons can be toggled and are lit when active. Abort isn't in,
+		   despite being a toggle button in KSP, because Telemachus doesn't allow
+		   to read its state. */
+		var vitals = {
+			sas: $("#sas"),
+			rcs: $("#rcs"),
+			light: $("#light"),
+			brake: $("#brake"),
+			gear: $("#gear")
+		}
+		var stop = false;
+
+		/* Updates the toggle buttons. This is fully asynchroneous to the button
+		   actuation, so it might take up to ⅓s for updates to register.
+		 */
+		setInterval (function () {
+			if (stop)
+				return;
+			var qry = "";
+			for (vital in vitals) {
+				qry += vital+"=v."+vital+"Value&";
+			}
+			jKSPWAPI.call (qry.slice(0,-1), function (v) {
+				for (vital in vitals) {
+					if (v[vital] == "True") {
+						vitals[vital].addClass ("active");
+					} else {
+						vitals[vital].removeClass ("active");
+					}
+				}
+			});
+		}, 330);
+
+		/* Similar to the readout logic, the button ID has to equal an Telemachus
+		   API string to be usable:
+		   https://github.com/richardbunt/Telemachus/wiki/API-String
+
+		   Exception is the ERR? button, it's used to indicate API errors and reload
+		   the page, because the tablet app doesn't have a native button for it.
+		 */
+		$("button").each (function (i,btn) {
+			console.log (btn.id);
+			if (btn.id == "err") {
+				btn.onclick = function () {
+					document.location.reload (true);
+				}
+				return;
+			}
+			btn.onclick = function () {
+				command (btn.id.indexOf('.')>=0? btn.id : 'f.'+btn.id);
+			}
+		});
+
+		function command (cmd) {
+			jKSPWAPI.call("ret=" + cmd, function (d) {
+				err (d.ret);
+			});
+		}
+
+		function err (code) {
+			if (code == 0) {
+				$('#err').removeClass ('active');
+			} else {
+				$('#err').addClass ('active');
+			}
+		}
+	</script>
+
+</body>
+</html>

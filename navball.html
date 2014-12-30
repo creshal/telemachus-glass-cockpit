@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<title>Navball</title>
+	<!-- Samuel Creshal <samuel@creshal.de> 2014
+	     No warranty yadda yadda you know the drill, Public Domain
+
+	     Adapted from http://stemkoski.github.io/Three.js/Textures.html
+	-->
+
+
+	<!-- Can drop in jquery if you don't mind longer loading times but need its wider browser compatibility -->
+	<script src='zepto.js'></script>
+	<!-- Three.js and Detector.js -->
+	<script src='three.min.js'></script>
+
+	<!-- Supplied by Telemachus -->
+	<script type="text/javascript" src="jKSPWAPICore.js"></script>
+
+	<!-- Own styles -->
+	<link rel="stylesheet" type="text/css" href="yskeleton.css" />
+	<link rel="stylesheet" type="text/css" href="ystyle.css" />
+</head>
+<body>
+
+	<div class="centred">
+		<!-- WebGL drawing canvas -->
+		<div id="ThreeJS"></div>
+		<img id="indicator" src="indicator.png" />
+		<pre class="readout centred" id="kerbalrotation"></pre>
+	</div>
+
+
+	<script>
+		// Generic ThreeJS stuff
+		var container, scene, camera, renderer, ball;
+		// rotation vectors
+		var X = new THREE.Vector3 (1,0,0);
+		var Y = new THREE.Vector3 (0,1,0);
+		var Z = new THREE.Vector3 (0,0,1);
+		// For debugging: Stop updates (because they spam console.log if shit breaks)
+		var stop = false;
+
+
+		function dr (deg) {
+			return deg*(Math.PI/180);
+		}
+
+		function kerbRotate3 (Pitch,Heading,Roll) {
+			$("#kerbalrotation")[0].innerHTML="Pit:\t"+(Pitch|0)+"\nHdg:\t"+(Heading|0)+"\nRol:\t"+(Roll|0);
+
+			/* After spending way too much time staring at quaternions and Euler
+			   vectors and rotation matrices and fuck all that, we're doing this
+			   the easy way. The navball will jump around if a draw is scheduled
+			   in the middle of these operations, but screw that. */
+
+			var r = ball.rotation;
+			// Reset rotation to make sure we're rotating around world coordinates
+			r.x=0;
+			r.y=0;
+			r.z=0;
+			// The texture seems to be rotated wrong, so we'll have to transform
+			// the rotation values given.
+			ball.rotateOnAxis (Z, dr(-Roll));
+			ball.rotateOnAxis (X, dr(-Pitch));
+			ball.rotateOnAxis (Y, dr(270-Heading));
+		}
+
+		// Updater
+		setInterval (function () {
+			if (stop)
+				return;
+			var qry = "pitch=n.rawpitch&heading=n.rawheading&roll=n.rawroll";
+			jKSPWAPI.call (qry, function (v) {
+				// TODO: As noted above, this should just be cached and the navball
+				// rotated in some function that's guaranteed to not be called in the
+				// middle of a drawing call. Also could be animated.
+				kerbRotate3 (v.pitch, v.heading, v.roll);
+			});
+		}, 330);
+
+
+		// Generic ThreeJS setup stuff, taken directly from the example code
+
+		init();
+		animate();
+
+		function init()
+		{
+			// scene setup
+			scene = new THREE.Scene();
+			var SCREEN_WIDTH = 300, SCREEN_HEIGHT = 300;
+			var VIEW_ANGLE = 45, ASPECT = 1, NEAR = 1, FAR = 2000;
+			camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+			scene.add(camera);
+			camera.position.set(0,0,120);
+			camera.lookAt(scene.position);
+
+			if ( Detector.webgl )
+				renderer = new THREE.WebGLRenderer( {antialias:true} );
+			else
+				renderer = new THREE.CanvasRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			container = document.getElementById( 'ThreeJS' );
+			container.appendChild( renderer.domElement );
+			var light = new THREE.PointLight(0xffffff);
+			light.position.set(0,150,100);
+			scene.add(light);
+
+			// radius, segmentsWidth, segmentsHeight
+			var sphereGeom =  new THREE.SphereGeometry( 40, 48, 32 );
+
+			var moonTexture = THREE.ImageUtils.loadTexture( 'navball.png' );
+			moonTexture.anisotropy = 16;
+			var moonMaterial = new THREE.MeshBasicMaterial( { map: moonTexture } );
+			ball = new THREE.Mesh( sphereGeom.clone(), moonMaterial );
+			ball.position.set(0, 0, 0);
+			scene.add( ball );
+		}
+
+		function animate()
+		{
+			requestAnimationFrame( animate );
+			render();
+		}
+
+		function render()
+		{
+			renderer.render( scene, camera );
+		}
+	</script>
+</body>
+</html>
+
